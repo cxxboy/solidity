@@ -241,7 +241,7 @@ bool isArtifactRequested(Json::Value const& _outputSelection, string const& _fil
 vector<string> evmObjectComponents(string const& _objectKind)
 {
 	solAssert(_objectKind == "bytecode" || _objectKind == "deployedBytecode", "");
-	vector<string> components{"", ".object", ".opcodes", ".sourceMap", ".generatedSources", ".linkReferences"};
+	vector<string> components{"", ".object", ".opcodes", ".sourceMap", ".functionDebugData", ".generatedSources", ".linkReferences"};
 	if (_objectKind == "deployedBytecode")
 		components.push_back(".immutableReferences");
 	return util::applyMap(components, [&](auto const& _s) { return "evm." + _objectKind + _s; });
@@ -323,6 +323,29 @@ bool isIRRequested(Json::Value const& _outputSelection)
 	return false;
 }
 
+Json::Value formatFunctionDebugInfo(map<string, evmasm::LinkerObject::FunctionDebugInfo> const& _debugInfo)
+{
+	Json::Value ret(Json::objectValue);
+	for (auto const& [name, info]: _debugInfo)
+	{
+		Json::Value fun;
+		if (info.sourceID)
+			fun["id"] = *info.sourceID;
+		else
+			fun["id"] = nullptr;
+		if (info.bytecodeOffset)
+			fun["entryPoint"] = *info.bytecodeOffset;
+		else
+			fun["entryPoint"] = nullptr;
+		fun["parameterSlots"] = info.params;
+		fun["returnSlats"] = info.returns;
+		ret[name] = move(fun);
+	}
+
+	return ret;
+}
+
+
 Json::Value formatLinkReferences(std::map<size_t, std::string> const& linkReferences)
 {
 	Json::Value ret(Json::objectValue);
@@ -388,6 +411,8 @@ Json::Value collectEVMObject(
 		output["opcodes"] = evmasm::disassemble(_object.bytecode);
 	if (_artifactRequested("sourceMap"))
 		output["sourceMap"] = _sourceMap ? *_sourceMap : "";
+	if (_artifactRequested("functionDebugData"))
+		output["functionDebugData"] = formatFunctionDebugInfo(_object.functionDebugInfo);
 	if (_artifactRequested("linkReferences"))
 		output["linkReferences"] = formatLinkReferences(_object.linkReferences);
 	if (_runtimeObject && _artifactRequested("immutableReferences"))

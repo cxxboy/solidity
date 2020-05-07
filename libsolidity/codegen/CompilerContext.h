@@ -109,6 +109,10 @@ public:
 	bool isLocalVariable(Declaration const* _declaration) const;
 	bool isStateVariable(Declaration const* _declaration) const { return m_stateVariables.count(_declaration) != 0; }
 
+	/// @returns the declaration corresponding to the function entry point label.
+	/// Used to compute debugging information.
+	Declaration const* declarationByNamedLabel(std::string const& _labelName) const;
+
 	/// @returns the entry label of the given function and creates it if it does not exist yet.
 	evmasm::AssemblyItem functionEntryLabel(Declaration const& _declaration);
 	/// @returns the entry label of the given function. Might return an AssemblyItem of type
@@ -216,7 +220,10 @@ public:
 	/// @returns a new tag without pushing any opcodes or data
 	evmasm::AssemblyItem newTag() { return m_asm->newTag(); }
 	/// @returns a new tag identified by name.
-	evmasm::AssemblyItem namedTag(std::string const& _name) { return m_asm->namedTag(_name); }
+	evmasm::AssemblyItem namedTag(std::string const& _name, size_t _params, size_t _returns, std::optional<uint64_t> _sourceID)
+	{
+		return m_asm->namedTag(_name, _params, _returns, _sourceID);
+	}
 	/// Adds a subroutine to the code (in the data section) and pushes its size (via a tag)
 	/// on the stack. @returns the pushsub assembly item.
 	evmasm::AssemblyItem addSubroutine(evmasm::AssemblyPointer const& _assembly) { return m_asm->appendSubroutine(_assembly); }
@@ -335,6 +342,8 @@ private:
 
 		/// Labels pointing to the entry points of functions.
 		std::map<Declaration const*, evmasm::AssemblyItem> m_entryLabels;
+		/// Maps assembly label names to declarations.
+		std::map<std::string, Declaration const*> m_declarationByLabelName;
 		/// Set of functions for which we did not yet generate code.
 		std::set<Declaration const*> m_alreadyCompiledFunctions;
 		/// Queue of functions that still need to be compiled (important to be a queue to maintain
