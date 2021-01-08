@@ -9,9 +9,6 @@ contract c {
 // compileViaYul: also
 // ----
 // set(): 1, 2, 3, 4, 5 -> true
-// gas irOptimized: 163680
-// gas legacy: 163756
-// gas legacyOptimized: 163596
-// storage: nonempty
+// storageEmpty -> false
 // reset() -> true
-// storage: empty
+// storageEmpty -> true
