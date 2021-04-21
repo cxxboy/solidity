@@ -148,6 +148,7 @@ void EVMHost::reset()
 	recorded_selfdestructs.clear();
 	// Clear call records
 	recorded_calls.clear();
+	// TODO: set recorded_account_accesses here for supporting EIP-2930 access lists
 
 	// Mark all precompiled contracts as existing. Existing here means to have a balance (as per EIP-161).
 	// NOTE: keep this in sync with `EVMHost::call` below.
