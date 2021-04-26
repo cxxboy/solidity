@@ -90,6 +90,8 @@ public:
 private:
 	evmc::address m_currentAddress = {};
 
+	evmc::result execute(evmc_message const& _message, evmc::bytes const& _code) noexcept;
+
 	/// Records calls made via @param _message.
 	void recordCalls(evmc_message const& _message) noexcept;
 

@@ -148,7 +148,6 @@ void EVMHost::reset()
 	recorded_selfdestructs.clear();
 	// Clear call records
 	recorded_calls.clear();
-	// TODO: set recorded_account_accesses here for supporting EIP-2930 access lists
 
 	// Mark all precompiled contracts as existing. Existing here means to have a balance (as per EIP-161).
 	// NOTE: keep this in sync with `EVMHost::call` below.
@@ -165,6 +164,17 @@ void EVMHost::reset()
 		if (precompiledAddress < 5 || m_evmVersion >= langutil::EVMVersion::byzantium())
 			accounts[address].codehash = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470_bytes32;
 	}
+}
+
+// TODO: add support for providing an access list
+evmc::result EVMHost::execute(evmc_message const& _message, evmc::bytes const& _code) noexcept
+{
+	if (m_evmRevision >= EVMC_BERLIN)
+	{
+		access_account(_message.sender);
+		access_account(_message.destination);
+	}
+	return m_vm.execute(*this, m_evmRevision, _message, _code.data(), _code.size());
 }
 
 void EVMHost::selfdestruct(const evmc::address& _addr, const evmc::address& _beneficiary) noexcept
@@ -276,7 +286,7 @@ evmc::result EVMHost::call(evmc_message const& _message) noexcept
 
 	evmc::address currentAddress = m_currentAddress;
 	m_currentAddress = message.destination;
-	evmc::result result = m_vm.execute(*this, m_evmRevision, message, code.data(), code.size());
+	evmc::result result = execute(message, code);
 	m_currentAddress = currentAddress;
 
 	if (message.kind == EVMC_CREATE || message.kind == EVMC_CREATE2)
